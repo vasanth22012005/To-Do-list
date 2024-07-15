@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .input-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    #task-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    #add-task {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    #add-task:hover {
+      background-color: #218838;
+    }
+
+    .tasks-container {
+      margin-top: 20px;
+    }
+
+    #task-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    #task-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #task-list li.completed label {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    #task-list li:last-child {
+      border-bottom: none;
+    }
+
+    #task-list input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    #task-list button {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #task-list button:hover {
+      background-color: #c82333;
+    }
+
+    #task-list button:nth-child(3) {
+      background-color: #ffc107;
+      color: #333;
+    }
+
+    #task-list button:nth-child(3):hover {
+      background-color: #e0a800;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>To-Do List</h1>
+    <div class="input-container">
+      <input type="text" id="task-input" placeholder="Enter a new task" />
+      <button id="add-task">Add</button>
+    </div>
+    <div class="tasks-container">
+      <ul id="task-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    // Get the task input, add task button, and task list elements
+    const taskInput = document.getElementById('task-input');
+    const addTaskButton = document.getElementById('add-task');
+    const taskList = document.getElementById('task-list');
+
+    // Load tasks from localStorage
+    loadTasksFromStorage();
+
+    // Add event listener for the "Add" button
+    addTaskButton.addEventListener('click', addTask);
+
+    // Add event listener for the "Enter" key press in the input field
+    taskInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        addTask();
+      }
+    });
+
+    // Function to add a new task
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (taskText !== '') {
+        const taskItem = createTaskItem(taskText);
+        taskList.appendChild(taskItem);
+        taskInput.value = '';
+        saveTasksToStorage();
+      }
+    }
+
+    // Function to create a task item element
+    function createTaskItem(taskText) {
+      const taskItem = document.createElement('li');
+      const taskCheckbox = document.createElement('input');
+      taskCheckbox.type = 'checkbox';
+      taskCheckbox.addEventListener('change', toggleTaskStatus);
+      const taskLabel = document.createElement('label');
+      taskLabel.textContent = taskText;
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Edit';
+      editButton.addEventListener('click', editTask);
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', deleteTask);
+      taskItem.appendChild(taskCheckbox);
+      taskItem.appendChild(taskLabel);
+      taskItem.appendChild(editButton);
+      taskItem.appendChild(deleteButton);
+      return taskItem;
+    }
+
+    // Functions to handle task status, editing, and deletion
+    function toggleTaskStatus(event) {
+      const taskItem = event.target.parentNode;
+      taskItem.classList.toggle('completed');
+      saveTasksToStorage();
+    }
+
+    function editTask(event) {
+      const taskItem = event.target.parentNode;
+      const taskLabel = taskItem.querySelector('label');
+      const newTaskText = prompt('Edit task:', taskLabel.textContent);
+      if (newTaskText !== null && newTaskText.trim() !== '') {
+        taskLabel.textContent = newTaskText;
+        saveTasksToStorage();
+      }
+    }
+
+    function deleteTask(event) {
+      const taskItem = event.target.parentNode;
+      taskList.removeChild(taskItem);
+      saveTasksToStorage();
+    }
+
+    // Functions to save and load tasks from localStorage
+    function saveTasksToStorage() {
+      const tasks = [];
+      const taskItems = taskList.getElementsByTagName('li');
+      for (let i = 0; i < taskItems.length; i++) {
+        const taskItem = taskItems[i];
+        const taskText = taskItem.querySelector('label').textContent;
+        const isCompleted = taskItem.classList.contains('completed');
+        tasks.push({ text: taskText, completed: isCompleted });
+      }
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function loadTasksFromStorage() {
+      const tasksJSON = localStorage.getItem('tasks');
+      if (tasksJSON) {
+        const tasks = JSON.parse(tasksJSON);
+        tasks.forEach((task) => {
+          const taskItem = createTaskItem(task.text);
+          if (task.completed) {
+            taskItem.classList.add('completed');
+            taskItem.querySelector('input[type="checkbox"]').checked = true;
+          }
+          taskList.appendChild(taskItem);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
